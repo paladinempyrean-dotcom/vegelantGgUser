@@ -29,7 +29,6 @@ app.get("/admin", (req, res) => {
       <pre id="keyList"></pre>
       <script>
         let lastKey = "";
-
         async function doGenerate() {
           const expiry = document.getElementById("expiry").value.trim();
           const res = await fetch("/generate-key", {
@@ -42,12 +41,10 @@ app.get("/admin", (req, res) => {
           document.getElementById("result").innerText = "KEY: " + data.key;
           document.getElementById("copyBtn").style.display = "inline";
         }
-
         function copyKey() {
           navigator.clipboard.writeText(lastKey);
           alert("Copied: " + lastKey);
         }
-
         async function listKeys() {
           const res = await fetch("/list-keys");
           const data = await res.json();
@@ -66,11 +63,10 @@ app.post("/generate-key", (req, res) => {
   res.json({ success: true, key });
 });
 
-// ✅ FIX: trim the key to avoid whitespace issues
-app.post("/check-key", (req, res) => {
-  const key = (req.body.key || "").trim().toUpperCase();
+// ✅ Accepts both GET and POST
+app.all("/check-key", (req, res) => {
+  const key = ((req.body && req.body.key) || req.query.key || "").trim().toUpperCase();
   console.log("Checking Key:", key);
-  console.log("All Keys:", Object.keys(keys));
 
   const data = keys[key];
 
@@ -89,7 +85,6 @@ app.post("/check-key", (req, res) => {
   res.json({ valid: true, message: "Access granted" });
 });
 
-// ✅ NEW: see all active keys (remove in production)
 app.get("/list-keys", (req, res) => {
   res.json(keys);
 });
