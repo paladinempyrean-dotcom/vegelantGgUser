@@ -1,9 +1,23 @@
 const express = require("express");
 const app = express();
+const fs = require("fs");
 
 app.use(express.json());
 
-let keys = {};
+const KEYS_FILE = "./keys.json";
+
+// Load keys from file
+function loadKeys() {
+  if (fs.existsSync(KEYS_FILE)) {
+    return JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
+  }
+  return {};
+}
+
+// Save keys to file
+function saveKeys(keys) {
+  fs.writeFileSync(KEYS_FILE, JSON.stringify(keys, null, 2));
+}
 
 function generateKey() {
   const part = () => Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -57,14 +71,16 @@ app.get("/admin", (req, res) => {
 });
 
 app.post("/generate-key", (req, res) => {
+  const keys = loadKeys();
   const key = generateKey();
   keys[key] = { expires: req.body.expires || null };
+  saveKeys(keys);
   console.log("Generated Key:", key);
   res.json({ success: true, key });
 });
 
-// ✅ Accepts both GET and POST
 app.all("/check-key", (req, res) => {
+  const keys = loadKeys();
   const key = ((req.body && req.body.key) || req.query.key || "").trim().toUpperCase();
   console.log("Checking Key:", key);
 
@@ -86,7 +102,7 @@ app.all("/check-key", (req, res) => {
 });
 
 app.get("/list-keys", (req, res) => {
-  res.json(keys);
+  res.json(loadKeys());
 });
 
 const PORT = process.env.PORT || 3000;
